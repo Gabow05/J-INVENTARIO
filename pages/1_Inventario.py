@@ -18,14 +18,18 @@ def main():
         return
 
     # Búsqueda y filtros
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col1, col2 = st.columns([1, 1])
 
     with col1:
         search = st.text_input("🔍 Buscar por nombre o código", "")
+        lineas = ['Todas'] + sorted(df['linea'].unique().tolist())
+        linea_filter = st.selectbox("Filtrar por línea de producto", lineas)
     with col2:
-        precio_min = st.number_input("Precio mínimo", 0.0, value=0.0, step=1000.0)
-    with col3:
-        precio_max = st.number_input("Precio máximo", 0.0, value=float(df['precio'].max()), step=1000.0)
+        col_price1, col_price2 = st.columns(2)
+        with col_price1:
+            precio_min = st.number_input("Precio mínimo", 0.0, value=0.0, step=1000.0)
+        with col_price2:
+            precio_max = st.number_input("Precio máximo", 0.0, value=float(df['precio'].max()), step=1000.0)
     
     hide_zero_negative = st.checkbox("Ocultar productos con cantidad 0 o negativa", value=False)
 
@@ -36,11 +40,15 @@ def main():
         mask = mask & (df['cantidad'] > 0)
 
     if search:
-        search_mask = df.apply(lambda row: any(
-            str(search).lower() in str(value).lower() 
-            for value in row.values
-        ), axis=1)
+        search_mask = (
+            df['producto'].str.contains(search, case=False, na=False) |
+            df['codigo'].str.contains(search, case=False, na=False) |
+            df['linea'].str.contains(search, case=False, na=False)
+        )
         mask = mask & search_mask
+        
+    if linea_filter != 'Todas':
+        mask = mask & (df['linea'] == linea_filter)
 
     mask = mask & (df['precio'] >= precio_min) & (df['precio'] <= precio_max)
 

@@ -12,7 +12,7 @@ def initialize_database():
 
     c.execute('''
         CREATE TABLE IF NOT EXISTS inventory
-        (producto TEXT, referencia TEXT, codigo TEXT, cantidad INTEGER, precio REAL)
+        (producto TEXT, referencia TEXT, codigo TEXT, cantidad INTEGER, precio REAL, nomb_marca TEXT, linea TEXT)
     ''')
 
     conn.commit()
