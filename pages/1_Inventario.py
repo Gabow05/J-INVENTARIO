@@ -59,7 +59,7 @@ def main():
     with col1:
         st.metric("Total Productos", len(filtered_df))
     with col2:
-        valor_total = (filtered_df['precio'] * filtered_df['cantidad']).sum()
+        valor_total = (filtered_df['precio'].astype(float) * filtered_df['cantidad'].astype(float)).sum()
         st.metric("Valor Total", f"${valor_total:,.2f}")
     with col3:
         agotados = len(filtered_df[filtered_df['cantidad'] == 0])
@@ -69,8 +69,16 @@ def main():
         st.metric("Precio Promedio", f"${filtered_df['precio'].mean():,.2f}")
 
     # Mostrar tabla de inventario
+    # Aplicar estilo a las filas según la cantidad
+    def highlight_rows(row):
+        if row['cantidad'] <= 0:
+            return ['color: red'] * len(row)
+        return [''] * len(row)
+    
+    styled_df = filtered_df.style.apply(highlight_rows, axis=1)
+    
     st.dataframe(
-        filtered_df,
+        styled_df,
         use_container_width=True,
         hide_index=True,
         column_config={

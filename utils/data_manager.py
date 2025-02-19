@@ -26,13 +26,19 @@ def import_file_to_db(file):
 
         if file_extension == '.csv':
             # Intentar diferentes delimitadores
-            try:
-                df = pd.read_csv(file, encoding='utf-8')
-            except:
-                try:
-                    df = pd.read_csv(file, encoding='utf-8', sep=';')
-                except:
-                    df = pd.read_csv(file, encoding='latin1', sep=';')
+            encodings = ['utf-8', 'latin1', 'cp1252']
+            separators = [',', ';']
+            
+            for encoding in encodings:
+                for sep in separators:
+                    try:
+                        df = pd.read_csv(file, encoding=encoding, sep=sep)
+                        if len(df.columns) > 1:  # Verificar si se leyó correctamente
+                            break
+                    except:
+                        continue
+                if 'df' in locals():
+                    break
         elif file_extension in ['.xls', '.xlsx']:
             df = pd.read_excel(file)
         else:
