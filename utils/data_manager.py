@@ -12,7 +12,7 @@ def initialize_database():
 
     c.execute('''
         CREATE TABLE IF NOT EXISTS inventory
-        (producto TEXT, referencia TEXT, codigo TEXT, cantidad INTEGER, precio REAL, nomb_marca TEXT)
+        (producto TEXT, referencia TEXT, codigo TEXT, cantidad INTEGER, precio REAL)
     ''')
 
     conn.commit()
@@ -50,7 +50,7 @@ def import_file_to_db(file):
         df.rename(columns=column_mapping, inplace=True)
 
         # Asegurarse de que las columnas requeridas existan
-        required_columns = ['producto', 'referencia', 'codigo', 'cantidad', 'precio', 'nomb_marca']
+        required_columns = ['producto', 'referencia', 'codigo', 'cantidad', 'precio']
         if not all(col in df.columns for col in required_columns):
             return False
 

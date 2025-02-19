@@ -18,21 +18,14 @@ def main():
         return
 
     # Búsqueda y filtros
-    col1, col2 = st.columns([2, 2])
-    
+    col1, col2, col3 = st.columns([2, 1, 1])
+
     with col1:
-        search = st.text_input("🔍 Buscar por nombre", "")
-        codigo_search = st.text_input("🔍 Buscar por código", "")
+        search = st.text_input("🔍 Buscar por nombre o código", "")
     with col2:
-        # Obtener marcas únicas
-        marcas = ['Todas'] + sorted(df['nomb_marca'].unique().tolist())
-        marca_filter = st.selectbox("Filtrar por marca", marcas)
-        
-        col_price1, col_price2 = st.columns(2)
-        with col_price1:
-            precio_min = st.number_input("Precio mínimo", 0.0, value=0.0, step=1000.0)
-        with col_price2:
-            precio_max = st.number_input("Precio máximo", 0.0, value=float(df['precio'].max()), step=1000.0)
+        precio_min = st.number_input("Precio mínimo", 0.0, value=0.0, step=1000.0)
+    with col3:
+        precio_max = st.number_input("Precio máximo", 0.0, value=float(df['precio'].max()), step=1000.0)
     
     hide_zero_negative = st.checkbox("Ocultar productos con cantidad 0 o negativa", value=False)
 
@@ -43,13 +36,11 @@ def main():
         mask = mask & (df['cantidad'] > 0)
 
     if search:
-        mask = mask & df['producto'].str.contains(search, case=False, na=False)
-    
-    if codigo_search:
-        mask = mask & df['codigo'].str.contains(codigo_search, case=False, na=False)
-        
-    if marca_filter != 'Todas':
-        mask = mask & (df['nomb_marca'] == marca_filter)
+        search_mask = df.apply(lambda row: any(
+            str(search).lower() in str(value).lower() 
+            for value in row.values
+        ), axis=1)
+        mask = mask & search_mask
 
     mask = mask & (df['precio'] >= precio_min) & (df['precio'] <= precio_max)
 
