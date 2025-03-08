@@ -1,7 +1,6 @@
 import pandas as pd
 import sqlite3
 import os
-import streamlit as st
 from datetime import datetime
 
 DB_PATH = 'inventory.db'
@@ -86,25 +85,12 @@ def import_file_to_db(file):
         print(f"Error al importar archivo: {str(e)}")
         return False
 
-@st.cache_data(ttl=300)
 def load_data():
-    """Carga los datos desde la base de datos con caché para mejorar rendimiento"""
+    """Carga los datos desde la base de datos"""
     try:
         conn = sqlite3.connect(DB_PATH)
-        # Seleccionar solo las columnas necesarias por defecto
-        df = pd.read_sql_query('''
-            SELECT producto, referencia, codigo, cantidad, precio, 
-                   nomb_marca, linea 
-            FROM inventory
-        ''', conn)
+        df = pd.read_sql_query('SELECT * FROM inventory', conn)
         conn.close()
-        
-        # Convertir tipos de datos para mejor rendimiento
-        if not df.empty:
-            df['cantidad'] = df['cantidad'].astype('int32')
-            df['precio'] = df['precio'].astype('float32')
-            
         return df
-    except Exception as e:
-        print(f"Error loading data: {e}")
+    except:
         return None
