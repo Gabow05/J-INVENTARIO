@@ -8,11 +8,11 @@ st.set_page_config(page_title="Calculadora de Descuentos", page_icon="🧮", lay
 def calcular_categorizacion(precio):
     """Categoriza el producto según su precio"""
     if precio < 50000:
-        return "pequeño", (5, 10)
-    elif precio < 200000:
-        return "mediano", (10, 15)
+        return "pequeño", (1, 5)
+    elif precio < 1200000:
+        return "mediano", (5, 12)
     else:
-        return "grande", (15, 20)
+        return "grande", (12, 15)
 
 def analizar_descuento(precio, porcentaje_descuento):
     """Analiza si un descuento es seguro para el negocio"""
