@@ -1,17 +1,16 @@
-
 [server]
+headless = true
 address = "0.0.0.0"
-port = 8501
-enableCORS = true
+port = 5000
+enableCORS = false
 enableXsrfProtection = false
-enableWebsocketCompression = false
 
 [browser]
 gatherUsageStats = false
 
 [theme]
-primaryColor = "#00CED1"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#E0FFFF"
-textColor = "#2F4F4F"
+primaryColor = "#3BA8A8"  # Color turquesa del logo
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f8f9fa"
+textColor = "#212529"
 font = "sans serif"
