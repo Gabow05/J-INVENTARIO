@@ -115,7 +115,7 @@ def main():
         col1, col2 = st.columns(2)
 
         with col1:
-            st.markdown("""
+            st.markdown(f"""
             <div style='padding: 20px; background-color: #f8f9fa; border-radius: 10px;'>
                 <h3>💰 Análisis de Precios</h3>
                 <hr>
@@ -124,6 +124,7 @@ def main():
             st.write(f"Precio público: ${precio:,.0f}")
             st.write(f"Precio con descuento: ${analisis['precio_final']:,.0f}")
             st.write(f"Valor del descuento: ${analisis['descuento_valor']:,.0f}")
+            st.markdown(f"<h4 style='color: #1E88E5; text-align: center; margin-top: 15px;'>Descuento aplicado: <b>{descuento}%</b></h4>", unsafe_allow_html=True)
 
             st.markdown("</div>", unsafe_allow_html=True)
 
@@ -168,10 +169,10 @@ def main():
 
         df = pd.DataFrame(data)
         st.bar_chart(df.set_index('Componente'))
-        
+
         # Lista de descuentos favorables por producto del inventario
         st.markdown("### 📋 Descuentos Recomendados por Producto")
-        
+
         try:
             inv_df = load_data()
             if inv_df is not None and not inv_df.empty:
@@ -181,7 +182,7 @@ def main():
                 descuentos_df['referencia'] = inv_df['referencia']
                 descuentos_df['codigo'] = inv_df['codigo']
                 descuentos_df['precio'] = inv_df['precio']
-                
+
                 # Calcular categoría y rangos
                 descuentos_df['categoria'] = descuentos_df['precio'].apply(
                     lambda x: calcular_categorizacion(x)[0]
@@ -192,7 +193,7 @@ def main():
                 descuentos_df['max_descuento'] = descuentos_df['precio'].apply(
                     lambda x: calcular_categorizacion(x)[1][1]
                 )
-                
+
                 # Mostrar tabla de descuentos
                 st.dataframe(
                     descuentos_df[['producto', 'referencia', 'codigo', 'precio', 'min_descuento', 'max_descuento']],
@@ -207,7 +208,7 @@ def main():
                     use_container_width=True,
                     hide_index=True
                 )
-                
+
                 # Agregar filtro de búsqueda para esta tabla
                 search_product = st.text_input("🔍 Buscar producto para ver descuentos recomendados")
                 if search_product:
@@ -216,7 +217,7 @@ def main():
                         descuentos_df['codigo'].str.contains(search_product, case=False, na=False) |
                         descuentos_df['referencia'].str.contains(search_product, case=False, na=False)
                     ]
-                    
+
                     if not filtered_discounts.empty:
                         st.dataframe(
                             filtered_discounts[['producto', 'referencia', 'codigo', 'precio', 'min_descuento', 'max_descuento']],
