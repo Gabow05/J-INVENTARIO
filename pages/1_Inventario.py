@@ -18,37 +18,30 @@ def main():
         return
 
     # Búsqueda y filtros
-    col1, col2 = st.columns([1, 1])
+    col1, col2, col3 = st.columns([2, 1, 1])
 
     with col1:
         search = st.text_input("🔍 Buscar por nombre o código", "")
-        lineas = ['Todas'] + sorted(df['linea'].unique().tolist())
-        linea_filter = st.selectbox("Filtrar por línea de producto", lineas)
     with col2:
-        col_price1, col_price2 = st.columns(2)
-        with col_price1:
-            precio_min = st.number_input("Precio mínimo", 0.0, value=0.0, step=1000.0)
-        with col_price2:
-            precio_max = st.number_input("Precio máximo", 0.0, value=float(df['precio'].max()), step=1000.0)
-    
-    hide_zero_negative = st.checkbox("Ocultar productos con cantidad 0 o negativa", value=False)
+        precio_min = st.number_input("💰 Precio mínimo", 0.0, value=0.0, step=1000.0)
+    with col3:
+        precio_max = st.number_input("💰 Precio máximo", 0.0, value=float(df['precio'].max()), step=1000.0)
+
+    hide_zero = st.checkbox("🚫 Ocultar productos agotados", value=False)
 
     # Aplicar filtros
     mask = pd.Series(True, index=df.index)
-    
-    if hide_zero_negative:
+
+    if hide_zero:
         mask = mask & (df['cantidad'] > 0)
 
     if search:
         search_mask = (
             df['producto'].str.contains(search, case=False, na=False) |
             df['codigo'].str.contains(search, case=False, na=False) |
-            df['linea'].str.contains(search, case=False, na=False)
+            df['referencia'].str.contains(search, case=False, na=False)
         )
         mask = mask & search_mask
-        
-    if linea_filter != 'Todas':
-        mask = mask & (df['linea'] == linea_filter)
 
     mask = mask & (df['precio'] >= precio_min) & (df['precio'] <= precio_max)
 
@@ -57,28 +50,26 @@ def main():
     # Mostrar métricas
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Total Productos", len(filtered_df))
+        st.metric("📦 Total Productos", len(filtered_df))
     with col2:
-        valor_total = (filtered_df['precio'].astype(float) * filtered_df['cantidad'].astype(float)).sum()
-        st.metric("Valor Total", f"${valor_total:,.2f}")
+        valor_total = (filtered_df['precio'] * filtered_df['cantidad']).sum()
+        st.metric("💵 Valor Total", f"${valor_total:,.2f}")
     with col3:
         agotados = len(filtered_df[filtered_df['cantidad'] == 0])
-        negativos = len(filtered_df[filtered_df['cantidad'] < 0])
-        st.metric(f"Productos Agotados/Negativos", f"{agotados}/{negativos}")
+        st.metric("⚠️ Productos Agotados", agotados)
     with col4:
-        st.metric("Precio Promedio", f"${filtered_df['precio'].mean():,.2f}")
+        st.metric("💰 Precio Promedio", f"${filtered_df['precio'].mean():,.2f}")
 
     # Mostrar tabla de inventario
-    # Aplicar estilo a las filas según la cantidad
-    def highlight_rows(row):
+    def highlight_agotados(row):
         if row['cantidad'] <= 0:
-            return ['color: red'] * len(row)
+            return ['background-color: #ffebee; color: #c62828'] * len(row)
+        elif row['cantidad'] < 5:
+            return ['background-color: #fff3e0; color: #ef6c00'] * len(row)
         return [''] * len(row)
-    
-    styled_df = filtered_df.style.apply(highlight_rows, axis=1)
-    
+
     st.dataframe(
-        styled_df,
+        filtered_df.style.apply(highlight_agotados, axis=1),
         use_container_width=True,
         hide_index=True,
         column_config={
@@ -96,7 +87,7 @@ def main():
             ),
             "cantidad": st.column_config.NumberColumn(
                 "Cantidad",
-                help="Productos agotados se muestran en rojo",
+                help="🔴 Rojo: Agotado | 🟠 Naranja: Stock bajo",
                 format="%d",
             ),
             "precio": st.column_config.NumberColumn(
@@ -106,17 +97,17 @@ def main():
         }
     )
 
-    # Mostrar estadísticas adicionales
+    # Estadísticas adicionales
     st.markdown("### 📊 Resumen de Inventario")
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("#### Top 5 Productos más caros")
+        st.markdown("#### 💎 Top 5 Productos más caros")
         top_expensive = filtered_df.nlargest(5, 'precio')[['producto', 'precio']]
         st.dataframe(top_expensive, hide_index=True)
 
     with col2:
-        st.markdown("#### Productos con stock bajo (menos de 5 unidades)")
+        st.markdown("#### ⚠️ Productos con stock bajo (menos de 5 unidades)")
         low_stock = filtered_df[filtered_df['cantidad'] < 5][['producto', 'cantidad']]
         st.dataframe(low_stock, hide_index=True)
 

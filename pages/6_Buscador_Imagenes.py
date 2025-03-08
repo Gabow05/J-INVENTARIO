@@ -1,33 +1,31 @@
 import streamlit as st
-import os
+from pexels_api import API
+import requests
 from PIL import Image
-import pandas as pd
+from io import BytesIO
 
 st.set_page_config(page_title="Buscador de Imágenes", page_icon="🔍", layout="wide")
 
-def search_images(query, categoria=None):
+def buscar_imagenes_pexels(query, per_page=10):
     """
-    Simula una búsqueda de imágenes basada en texto
+    Busca imágenes usando la API de Pexels
     """
-    resultados = [
-        {
-            'titulo': '📱 Imagen de producto 1',
-            'descripcion': '✨ Fotografía profesional de producto',
-            'categoria': 'Productos',
-            'tags': ['producto', 'tecnología', 'gadget']
-        },
-        {
-            'titulo': '🎨 Diseño para redes sociales',
-            'descripcion': '🎯 Banner promocional optimizado',
-            'categoria': 'Marketing',
-            'tags': ['marketing', 'social media', 'diseño']
-        }
-    ]
+    # URL de la API de Pexels
+    url = f"https://api.pexels.com/v1/search?query={query}&per_page={per_page}"
 
-    if categoria:
-        resultados = [r for r in resultados if r['categoria'] == categoria]
-
-    return resultados
+    try:
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": "Guest" # Modo invitado para pruebas básicas
+            }
+        )
+        if response.status_code == 200:
+            return response.json().get('photos', [])
+        return []
+    except Exception as e:
+        st.error(f"Error al buscar imágenes: {str(e)}")
+        return []
 
 def main():
     st.markdown("""
@@ -39,9 +37,9 @@ def main():
     # Descripción del servicio
     st.markdown("""
     <div style='padding: 15px; background-color: #f0f8ff; border-radius: 10px; margin-bottom: 20px;'>
-        🎯 Encuentra la imagen perfecta para tu negocio
-        <br>🖼️ Biblioteca de imágenes optimizada
-        <br>🏷️ Búsqueda inteligente por etiquetas
+        🎯 Encuentra imágenes perfectas para tu negocio
+        <br>🖼️ Acceso a millones de imágenes profesionales
+        <br>🏷️ Búsqueda inteligente por palabras clave
     </div>
     """, unsafe_allow_html=True)
 
@@ -51,100 +49,88 @@ def main():
         search_query = st.text_input(
             "🔍 Buscar imágenes",
             placeholder="¿Qué tipo de imagen estás buscando?",
-            help="Escribe palabras clave para encontrar imágenes"
+            help="Escribe palabras clave como 'naturaleza', 'negocios', 'tecnología', etc."
         )
     with col2:
-        categoria = st.selectbox(
-            "📁 Categoría",
-            ["📌 Todas", "📦 Productos", "📢 Marketing", "🎨 Logos", "🖼️ Banners"]
+        num_results = st.select_slider(
+            "📊 Número de resultados",
+            options=[5, 10, 15, 20],
+            value=10
         )
 
-    # Filtros avanzados con estilo
+    # Filtros avanzados
     with st.expander("✨ Filtros avanzados"):
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            formato = st.multiselect(
-                "📄 Formato",
-                ["📸 JPG", "🎨 PNG", "✏️ SVG", "🎬 GIF"]
-            )
-        with col2:
-            tamaño = st.select_slider(
-                "📏 Tamaño mínimo",
-                options=["🔹 Pequeño", "🔸 Mediano", "💠 Grande"]
-            )
-        with col3:
-            fecha = st.date_input("📅 Fecha desde")
-
-    # Área de resultados mejorada
-    if search_query:
-        resultados = search_images(
-            search_query,
-            categoria.split(" ")[1] if categoria != "📌 Todas" else None
-        )
-
-        st.markdown(f"""
-        <h3 style='color: #3BA8A8;'>
-            🎯 Resultados para: "{search_query}"
-        </h3>
-        """, unsafe_allow_html=True)
-
-        # Grid de resultados con estilo
-        for resultado in resultados:
-            with st.container():
-                st.markdown(f"""
-                <div style='padding: 20px; background-color: #f8f9fa; border-radius: 10px; margin-bottom: 20px;'>
-                    <h4>{resultado['titulo']}</h4>
-                    <p>{resultado['descripcion']}</p>
-                    <p><strong>📁 Categoría:</strong> {resultado['categoria']}</p>
-                    <p><strong>🏷️ Tags:</strong> {', '.join(['#'+tag for tag in resultado['tags']])}</p>
-                </div>
-                """, unsafe_allow_html=True)
-
-    # Área de carga de imágenes mejorada
-    st.markdown("""
-    <h3 style='color: #3BA8A8;'>
-        📤 Subir Nuevas Imágenes
-    </h3>
-    """, unsafe_allow_html=True)
-
-    with st.form("upload_form"):
-        uploaded_file = st.file_uploader(
-            "🖼️ Seleccionar imagen",
-            type=['png', 'jpg', 'jpeg'],
-            help="Arrastra y suelta tu imagen aquí"
-        )
-
         col1, col2 = st.columns(2)
         with col1:
-            titulo = st.text_input("📝 Título de la imagen")
+            orientation = st.selectbox(
+                "📐 Orientación",
+                ["Todas", "Horizontal", "Vertical", "Cuadrada"]
+            )
         with col2:
-            tags = st.text_input("🏷️ Tags (separados por comas)")
+            size = st.selectbox(
+                "📏 Tamaño",
+                ["Todas", "Grande", "Mediano", "Pequeño"]
+            )
 
-        descripcion = st.text_area("✍️ Descripción")
-        submitted = st.form_submit_button("📤 Subir Imagen", use_container_width=True)
+    # Búsqueda y visualización de resultados
+    if search_query:
+        with st.spinner('🔍 Buscando imágenes...'):
+            resultados = buscar_imagenes_pexels(search_query, num_results)
 
-    # Historial y categorías en sidebar
+            if resultados:
+                st.markdown(f"### ✨ Resultados para: '{search_query}'")
+
+                # Mostrar imágenes en un grid
+                cols = st.columns(3)
+                for idx, imagen in enumerate(resultados):
+                    with cols[idx % 3]:
+                        try:
+                            # Cargar y mostrar imagen
+                            img_url = imagen.get('src', {}).get('medium')
+                            if img_url:
+                                response = requests.get(img_url)
+                                img = Image.open(BytesIO(response.content))
+                                st.image(img, use_column_width=True)
+
+                                # Información de la imagen
+                                st.markdown(f"""
+                                    📸 Fotógrafo: {imagen.get('photographer', 'Desconocido')}
+                                    <br>📏 Dimensiones: {imagen.get('width')}x{imagen.get('height')}
+                                    """, unsafe_allow_html=True)
+
+                                # Botones de acción
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    st.button(f"⬇️ Descargar", key=f"download_{idx}")
+                                with col2:
+                                    st.button(f"💾 Guardar", key=f"save_{idx}")
+                        except Exception as e:
+                            st.error(f"Error al cargar imagen: {str(e)}")
+            else:
+                st.info("No se encontraron imágenes para tu búsqueda 😔")
+
+    # Tutorial y consejos
     with st.sidebar:
         st.markdown("""
         <div style='padding: 15px; background-color: #f0f8ff; border-radius: 10px;'>
-            <h3 style='color: #3BA8A8;'>🕒 Búsquedas Recientes</h3>
+            <h3 style='color: #3BA8A8;'>📝 Tips de búsqueda</h3>
+            <ul>
+                <li>Usa palabras específicas</li>
+                <li>Combina términos relacionados</li>
+                <li>Prueba diferentes idiomas</li>
+            </ul>
         </div>
         """, unsafe_allow_html=True)
-
-        st.markdown("""
-        - 🎨 Logo empresa
-        - 🖼️ Banner promocional
-        - 📦 Productos destacados
-        """)
 
         st.markdown("""
         <div style='padding: 15px; background-color: #f0f8ff; border-radius: 10px; margin-top: 20px;'>
-            <h3 style='color: #3BA8A8;'>🏷️ Categorías Populares</h3>
+            <h3 style='color: #3BA8A8;'>🎯 Búsquedas populares</h3>
         </div>
         """, unsafe_allow_html=True)
 
-        for cat in ["📦 Productos", "📢 Marketing", "🎨 Logos", "🖼️ Banners"]:
-            st.button(cat, use_container_width=True)
+        for tema in ["🏢 Negocios", "🌳 Naturaleza", "💻 Tecnología", "🎨 Arte"]:
+            if st.button(tema, use_container_width=True):
+                search_query = tema.split()[1]
 
 if __name__ == "__main__":
     main()

@@ -800,6 +800,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pexels-api"
+version = "1.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c4/76/4dbb76437cdf33607e220b1338ef27b2a883c0d431abccd72a4f5c62575a/pexels-api-1.0.1.tar.gz", hash = "sha256:89934dbe0e37481234c5659883be0958de0f809740b9874b9d2caaa974f9d0bf", size = 3057 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/55/ed/46df816965f51e45d26197df4dc89c4f7d0b4ae4223ceb9ca4712f5a79e0/pexels_api-1.0.1-py3-none-any.whl", hash = "sha256:3923eab214e6469a9b9fc6bc5a2d692e206a5c45f9f82b4ce1a685508057037e", size = 4725 },
+]
+
+[[package]]
 name = "pillow"
 version = "11.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1137,6 +1149,7 @@ dependencies = [
     { name = "forex-python" },
     { name = "openpyxl" },
     { name = "pandas" },
+    { name = "pexels-api" },
     { name = "plotly" },
     { name = "psycopg2-binary" },
     { name = "sqlalchemy" },
@@ -1151,6 +1164,7 @@ requires-dist = [
     { name = "forex-python", specifier = ">=1.8" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pandas", specifier = ">=2.2.3" },
+    { name = "pexels-api", specifier = ">=1.0.1" },
     { name = "plotly", specifier = ">=6.0.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "sqlalchemy", specifier = ">=2.0.38" },
