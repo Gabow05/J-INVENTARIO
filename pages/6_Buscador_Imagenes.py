@@ -1,31 +1,23 @@
 import streamlit as st
+from pexels_api import API
 import requests
 from PIL import Image
 from io import BytesIO
 
 st.set_page_config(page_title="Buscador de Imágenes", page_icon="🔍", layout="wide")
 
+# API Key pública de demo de Pexels
+PEXELS_API_KEY = "563492ad6f91700001000001f89979b6f6934dc49be8e276f91322c1"
+
 def buscar_imagenes(query, per_page=10):
     """
-    Busca imágenes usando la API pública de Pexels
+    Busca imágenes usando la biblioteca Pexels API
     """
-    # API pública de Pexels
-    url = f"https://api.pexels.com/v1/search"
-    headers = {
-        "Authorization": "563492ad6f91700001000001f89979b6f6934dc49be8e276f91322c1"  # Token público de demo
-    }
-    params = {
-        "query": query,
-        "per_page": per_page
-    }
-
     try:
-        response = requests.get(url, headers=headers, params=params)
-        if response.status_code == 200:
-            return response.json().get('photos', [])
-        else:
-            st.error(f"Error al buscar imágenes: {response.status_code}")
-            return []
+        api = API(PEXELS_API_KEY)
+        api.search(query, page=1, results_per_page=per_page)
+        photos = api.get_entries()
+        return photos
     except Exception as e:
         st.error(f"Error al buscar imágenes: {str(e)}")
         return []
@@ -75,21 +67,21 @@ def main():
                     with cols[idx % 3]:
                         try:
                             # Obtener URL de la imagen
-                            img_url = img['src']['medium']
+                            img_url = img.medium
 
                             # Mostrar imagen
                             response = requests.get(img_url)
                             image = Image.open(BytesIO(response.content))
-                            st.image(image, caption=f"📸 Por: {img['photographer']}")
+                            st.image(image, caption=f"📸 Por: {img.photographer}")
 
                             # Botones de acción
                             col1, col2 = st.columns(2)
                             with col1:
                                 if st.button(f"⬇️ Descargar", key=f"down_{idx}"):
-                                    st.markdown(f"[Descargar imagen]({img['src']['original']})")
+                                    st.markdown(f"[Descargar imagen]({img.original})")
                             with col2:
                                 if st.button(f"🔍 Ver detalles", key=f"view_{idx}"):
-                                    st.write(f"Dimensiones: {img['width']}x{img['height']}")
+                                    st.write(f"Dimensiones: {img.width}x{img.height}")
                         except Exception as e:
                             st.error(f"Error al cargar imagen: {str(e)}")
             else:
