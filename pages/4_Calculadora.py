@@ -7,7 +7,6 @@ st.set_page_config(page_title="Calculadora de Monedas", page_icon="💱", layout
 TASAS = {
     'USD': {
         'EUR': 0.91,
-        'COP': 3900.00,
         'GBP': 0.78,
         'JPY': 147.50,
         'CHF': 0.88,
@@ -17,10 +16,22 @@ TASAS = {
     }
 }
 
-def calcular_tasa(moneda_origen, moneda_destino):
+def calcular_tasa(moneda_origen, moneda_destino, tasa_cop_usd):
     """Calcula la tasa de cambio entre dos monedas"""
     if moneda_origen == moneda_destino:
         return 1.0
+
+    # Manejar conversiones con COP
+    if moneda_origen == 'COP' and moneda_destino == 'USD':
+        return 1 / tasa_cop_usd
+    if moneda_origen == 'USD' and moneda_destino == 'COP':
+        return tasa_cop_usd
+    if moneda_origen == 'COP':
+        return (1 / tasa_cop_usd) * TASAS['USD'][moneda_destino]
+    if moneda_destino == 'COP':
+        if moneda_origen in TASAS['USD']:
+            return tasa_cop_usd / TASAS['USD'][moneda_origen]
+        return tasa_cop_usd * (1 / TASAS['USD'][moneda_origen])
 
     # Si tenemos la tasa directa USD a moneda_destino
     if moneda_origen == 'USD' and moneda_destino in TASAS['USD']:
@@ -43,14 +54,25 @@ def main():
     </h1>
     """, unsafe_allow_html=True)
 
-    # Agregar descripción con estilo
     st.markdown("""
     <div style='padding: 15px; background-color: #f0f8ff; border-radius: 10px; margin-bottom: 20px;'>
         🌍 Convierte fácilmente entre diferentes monedas del mundo
         <br>🔄 Tasas de cambio actualizadas al 8 de marzo 2025
         <br>💡 Soporte para múltiples divisas
+        <br>🎯 Tasa COP/USD personalizable
     </div>
     """, unsafe_allow_html=True)
+
+    # Configuración de tasa COP/USD
+    st.sidebar.markdown("### 💵 Configuración COP/USD")
+    tasa_cop_usd = st.sidebar.number_input(
+        "Tasa de cambio COP/USD",
+        min_value=1000.0,
+        max_value=10000.0,
+        value=3900.0,
+        step=10.0,
+        help="Define la tasa de cambio entre Peso Colombiano y Dólar"
+    )
 
     # Lista de monedas con emojis
     monedas = {
@@ -90,7 +112,7 @@ def main():
     # Botón de conversión con estilo
     if st.button("💫 Convertir", type="primary", use_container_width=True):
         try:
-            tasa = calcular_tasa(moneda_origen, moneda_destino)
+            tasa = calcular_tasa(moneda_origen, moneda_destino, tasa_cop_usd)
             resultado = cantidad * tasa
 
             # Mostrar resultado con estilo
