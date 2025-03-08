@@ -5,26 +5,27 @@ import numpy as np
 
 st.set_page_config(page_title="Calculadora de Descuentos", page_icon="💰", layout="wide")
 
-def calcular_descuentos(precio):
+def calcular_precio_mayorista(precio_publico):
     """
-    Calcula tres niveles de descuento para un precio dado
+    Calcula el precio mayorista basado en el precio al público
+    Asume un 30% de utilidad y 5% de transporte
     """
-    # Descuento mínimo (5%)
-    descuento_minimo = precio * 0.05
-    precio_minimo = precio - descuento_minimo
-    
-    # Descuento favorable (10%)
-    descuento_favorable = precio * 0.10
-    precio_favorable = precio - descuento_favorable
-    
-    # Descuento máximo (15%)
-    descuento_maximo = precio * 0.15
-    precio_maximo = precio - descuento_maximo
-    
+    factor_mayorista = 1 - 0.35  # 35% total entre utilidad y transporte
+    return precio_publico * factor_mayorista
+
+def analizar_descuento(precio_publico, porcentaje_descuento):
+    """
+    Analiza si un descuento es seguro basado en el precio mayorista
+    """
+    precio_mayorista = calcular_precio_mayorista(precio_publico)
+    precio_con_descuento = precio_publico * (1 - porcentaje_descuento/100)
+    margen = ((precio_con_descuento - precio_mayorista) / precio_mayorista) * 100
+
     return {
-        'minimo': {'porcentaje': 5, 'descuento': descuento_minimo, 'precio_final': precio_minimo},
-        'favorable': {'porcentaje': 10, 'descuento': descuento_favorable, 'precio_final': precio_favorable},
-        'maximo': {'porcentaje': 15, 'descuento': descuento_maximo, 'precio_final': precio_maximo}
+        'precio_final': precio_con_descuento,
+        'descuento_valor': precio_publico - precio_con_descuento,
+        'margen_porcentaje': margen,
+        'es_seguro': margen >= 10  # Consideramos seguro si mantiene al menos 10% de margen
     }
 
 def main():
@@ -37,72 +38,96 @@ def main():
     st.markdown("""
     <div style='padding: 15px; background-color: #f0f8ff; border-radius: 10px; margin-bottom: 20px;'>
         🎯 Calcula descuentos seguros para tus productos
-        <br>💡 Obtén recomendaciones basadas en el análisis de inventario
-        <br>📊 Visualiza el impacto en tus ganancias
+        <br>💡 Basado en el precio mayorista (costo + transporte)
+        <br>📊 Análisis de rentabilidad incluido
     </div>
     """, unsafe_allow_html=True)
 
-    # Entrada del precio
-    precio = st.number_input(
-        "💵 Precio del producto",
-        min_value=1000.0,
-        max_value=10000000.0,
-        value=50000.0,
-        step=1000.0,
-        help="Ingresa el precio del producto para calcular los descuentos"
-    )
+    # Entrada del precio y descuento
+    col1, col2 = st.columns(2)
 
-    # Cálculo de descuentos
-    if st.button("🧮 Calcular Descuentos", use_container_width=True):
-        descuentos = calcular_descuentos(precio)
-        
+    with col1:
+        precio = st.number_input(
+            "💵 Precio del producto",
+            min_value=1000.0,
+            max_value=10000000.0,
+            value=50000.0,
+            step=1000.0,
+            help="Ingresa el precio al público del producto"
+        )
+
+    with col2:
+        descuento = st.number_input(
+            "📊 Porcentaje de descuento",
+            min_value=0.0,
+            max_value=15.0,
+            value=5.0,
+            step=0.5,
+            help="Ingresa el porcentaje de descuento deseado (máximo 15%)"
+        )
+
+    # Cálculo y análisis
+    if st.button("🧮 Analizar Descuento", use_container_width=True):
+        precio_mayorista = calcular_precio_mayorista(precio)
+        analisis = analizar_descuento(precio, descuento)
+
         # Mostrar resultados
-        col1, col2, col3 = st.columns(3)
-        
+        col1, col2 = st.columns(2)
+
         with col1:
             st.markdown("""
-            <div style='padding: 20px; background-color: #e6ffe6; border-radius: 10px; text-align: center;'>
-                <h3>🟢 Descuento Mínimo</h3>
-                <h2>5%</h2>
+            <div style='padding: 20px; background-color: #f8f9fa; border-radius: 10px;'>
+                <h3>💰 Análisis de Precios</h3>
                 <hr>
-                <p>Descuento: ${:,.0f}</p>
-                <p>Precio Final: ${:,.0f}</p>
-                <small>✅ Descuento seguro, ideal para productos de alta demanda</small>
-            </div>
-            """.format(
-                descuentos['minimo']['descuento'],
-                descuentos['minimo']['precio_final']
-            ), unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+
+            st.write(f"Precio público: ${precio:,.0f}")
+            st.write(f"Precio mayorista: ${precio_mayorista:,.0f}")
+            st.write(f"Precio con descuento: ${analisis['precio_final']:,.0f}")
+            st.write(f"Valor del descuento: ${analisis['descuento_valor']:,.0f}")
 
         with col2:
-            st.markdown("""
-            <div style='padding: 20px; background-color: #fff2e6; border-radius: 10px; text-align: center;'>
-                <h3>🟡 Descuento Favorable</h3>
-                <h2>10%</h2>
-                <hr>
-                <p>Descuento: ${:,.0f}</p>
-                <p>Precio Final: ${:,.0f}</p>
-                <small>✅ Buen balance entre atractivo y rentabilidad</small>
-            </div>
-            """.format(
-                descuentos['favorable']['descuento'],
-                descuentos['favorable']['precio_final']
-            ), unsafe_allow_html=True)
+            color = "green" if analisis['es_seguro'] else "red"
+            icon = "✅" if analisis['es_seguro'] else "⚠️"
 
-        with col3:
-            st.markdown("""
-            <div style='padding: 20px; background-color: #ffe6e6; border-radius: 10px; text-align: center;'>
-                <h3>🔴 Descuento Máximo</h3>
-                <h2>15%</h2>
+            st.markdown(f"""
+            <div style='padding: 20px; background-color: #f8f9fa; border-radius: 10px;'>
+                <h3>📊 Análisis de Rentabilidad</h3>
                 <hr>
-                <p>Descuento: ${:,.0f}</p>
-                <p>Precio Final: ${:,.0f}</p>
-                <small>⚠️ Usar solo en casos especiales o liquidación</small>
+                <p>Margen de ganancia: <span style='color: {color};'>{analisis['margen_porcentaje']:.1f}%</span></p>
+                <p>{icon} Este descuento es {'seguro' if analisis['es_seguro'] else 'riesgoso'}</p>
             </div>
-            """.format(
-                descuentos['maximo']['descuento'],
-                descuentos['maximo']['precio_final']
-            ), unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+
+        # Recomendaciones
+        st.markdown("### 💡 Recomendaciones")
+
+        if analisis['es_seguro']:
+            st.success(f"""
+            ✅ El descuento del {descuento}% es seguro para este producto:
+            - Mantiene un margen de ganancia saludable del {analisis['margen_porcentaje']:.1f}%
+            - El precio final (${analisis['precio_final']:,.0f}) está por encima del precio mayorista
+            """)
+        else:
+            st.warning(f"""
+            ⚠️ Este descuento podría ser riesgoso:
+            - El margen de ganancia ({analisis['margen_porcentaje']:.1f}%) es bajo
+            - Considera un descuento menor para mantener la rentabilidad
+            - Descuento máximo recomendado: {((precio - precio_mayorista * 1.1) / precio * 100):.1f}%
+            """)
+
+        # Gráfico de análisis
+        st.markdown("### 📊 Desglose de Precios")
+        data = {
+            'Componente': ['Precio Mayorista', 'Margen sin Descuento', 'Descuento'],
+            'Valor': [
+                precio_mayorista,
+                precio - precio_mayorista - analisis['descuento_valor'],
+                analisis['descuento_valor']
+            ]
+        }
+        df = pd.DataFrame(data)
+        st.bar_chart(df.set_index('Componente'))
 
         # Recomendaciones basadas en el inventario
         st.markdown("### 📊 Análisis y Recomendaciones")
@@ -128,7 +153,7 @@ def main():
         except Exception as e:
             st.warning("No se pudo acceder a los datos del inventario para recomendaciones.")
 
-        # Consejos adicionales
+        # Consejos adicionales (moved to after inventory analysis)
         st.markdown("""
         ### 💡 Consejos para Aplicar Descuentos
         
