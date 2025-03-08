@@ -3,156 +3,135 @@ import pandas as pd
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Gestor de Redes Sociales", page_icon="📱", layout="wide")
+st.set_page_config(page_title="Centro de Mensajes", page_icon="💬", layout="wide")
 
 def main():
     st.markdown("""
     <h1 style='text-align: center; color: #3BA8A8;'>
-        📱 Centro de Control de Redes Sociales ✨
+        💬 Centro de Mensajes Unificado ✨
     </h1>
     """, unsafe_allow_html=True)
 
-    # Sidebar mejorado
+    # Panel de control
     st.sidebar.markdown("""
     <div style='padding: 15px; background-color: #f0f8ff; border-radius: 10px;'>
-        <h3 style='color: #3BA8A8;'>🎯 Panel de Control</h3>
+        <h3 style='color: #3BA8A8;'>🎯 Redes Conectadas</h3>
     </div>
     """, unsafe_allow_html=True)
 
-    red_social = st.sidebar.selectbox(
-        "🌐 Seleccionar Red Social",
-        ["📘 Facebook", "📸 Instagram", "🐦 Twitter"]
-    )
+    # Estado de conexión de redes sociales
+    redes = {
+        "Facebook": {"conectado": False, "icono": "📘"},
+        "Instagram": {"conectado": False, "icono": "📸"},
+        "Twitter": {"conectado": False, "icono": "🐦"}
+    }
 
-    # Pestañas principales con estilo
-    tab1, tab2, tab3 = st.tabs([
-        "📅 Calendario de Publicaciones",
-        "📊 Estadísticas y Métricas",
-        "⚙️ Configuración"
+    # Botones de conexión para cada red social
+    for red, info in redes.items():
+        col1, col2 = st.sidebar.columns([3, 1])
+        with col1:
+            if info["conectado"]:
+                st.success(f"{info['icono']} {red} conectado")
+            else:
+                if st.button(f"Conectar {info['icono']} {red}", use_container_width=True):
+                    st.info(f"Conectando con {red}...")
+                    # Aquí iría la lógica de autenticación OAuth
+
+    # Pestañas principales
+    tab1, tab2 = st.tabs([
+        "💬 Bandeja de Mensajes",
+        "📊 Estadísticas"
     ])
 
     with tab1:
-        st.markdown("""
-        <h3 style='color: #3BA8A8;'>📅 Planificador de Contenido</h3>
-        """, unsafe_allow_html=True)
-
-        # Formulario para nueva publicación
-        with st.form("nueva_publicacion", clear_on_submit=True):
-            st.markdown("### ✍️ Nueva Publicación")
-            fecha = st.date_input("📆 Fecha de publicación")
-            hora = st.time_input("⏰ Hora de publicación")
-            contenido = st.text_area("💭 Contenido", placeholder="Escribe tu mensaje aquí...")
-            imagen = st.file_uploader("🖼️ Subir imagen", type=['png', 'jpg', 'jpeg'])
-
-            cols = st.columns(2)
-            with cols[0]:
-                programar = st.form_submit_button("📅 Programar", use_container_width=True)
-            with cols[1]:
-                vista_previa = st.form_submit_button("👁️ Vista Previa", use_container_width=True)
-
-        # Calendario de publicaciones con estilo
-        st.markdown("""
-        <h4 style='color: #3BA8A8;'>📋 Publicaciones Programadas</h4>
-        """, unsafe_allow_html=True)
-
-        ejemplo_data = pd.DataFrame({
-            'Fecha': ['2025-03-10', '2025-03-11', '2025-03-12'],
-            'Hora': ['10:00', '15:30', '18:00'],
-            'Contenido': ['¡Nuevo producto!', 'Oferta especial', 'Evento próximo'],
-            'Estado': ['🟢 Programado', '✅ Publicado', '🟡 Pendiente']
-        })
-
-        st.dataframe(
-            ejemplo_data,
-            use_container_width=True,
-            column_config={
-                "Fecha": st.column_config.DateColumn("📅 Fecha"),
-                "Hora": st.column_config.TextColumn("⏰ Hora"),
-                "Contenido": st.column_config.TextColumn("💭 Contenido"),
-                "Estado": st.column_config.TextColumn("📌 Estado")
-            }
-        )
-
-    with tab2:
-        st.markdown("""
-        <h3 style='color: #3BA8A8;'>📊 Panel de Métricas</h3>
-        """, unsafe_allow_html=True)
-
-        # Métricas con estilo
+        # Filtros de mensajes
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.markdown("""
-            <div style='padding: 20px; background-color: #e6f3ff; border-radius: 10px; text-align: center;'>
-                <h2>👥 1,234</h2>
-                <p>Seguidores</p>
-                <small style='color: green;'>↑ +123 esta semana</small>
-            </div>
-            """, unsafe_allow_html=True)
+            red_seleccionada = st.selectbox(
+                "🌐 Filtrar por red social",
+                ["Todas", "📘 Facebook", "📸 Instagram", "🐦 Twitter"]
+            )
         with col2:
-            st.markdown("""
-            <div style='padding: 20px; background-color: #fff2e6; border-radius: 10px; text-align: center;'>
-                <h2>❤️ 456</h2>
-                <p>Interacciones</p>
-                <small style='color: green;'>↑ +45 esta semana</small>
-            </div>
-            """, unsafe_allow_html=True)
+            estado = st.selectbox(
+                "📫 Estado",
+                ["Todos", "No leídos", "Respondidos", "Pendientes"]
+            )
         with col3:
-            st.markdown("""
-            <div style='padding: 20px; background-color: #e6ffe6; border-radius: 10px; text-align: center;'>
-                <h2>👁️ 10,234</h2>
-                <p>Alcance</p>
-                <small style='color: green;'>↑ +1,023 esta semana</small>
-            </div>
-            """, unsafe_allow_html=True)
+            busqueda = st.text_input("🔍 Buscar en mensajes")
 
-        # Gráfico interactivo mejorado
-        datos_ejemplo = pd.DataFrame({
-            'fecha': pd.date_range(start='2025-03-01', end='2025-03-08'),
-            'interacciones': [100, 150, 130, 200, 180, 220, 190, 250]
+        # Área de mensajes
+        st.markdown("### 📥 Mensajes Recientes")
+
+        # Ejemplo de mensajes
+        mensajes = [
+            {
+                "red": "📘 Facebook",
+                "usuario": "Juan Pérez",
+                "mensaje": "¿Tienen disponible el producto X?",
+                "fecha": "2025-03-08 10:30",
+                "estado": "No leído"
+            },
+            {
+                "red": "📸 Instagram",
+                "usuario": "María García",
+                "mensaje": "¿Cuál es el horario de atención?",
+                "fecha": "2025-03-08 09:15",
+                "estado": "Respondido"
+            }
+        ]
+
+        for mensaje in mensajes:
+            with st.container():
+                st.markdown(f"""
+                <div style='padding: 15px; background-color: #f8f9fa; border-radius: 10px; margin-bottom: 10px;'>
+                    <h4>{mensaje['red']} - {mensaje['usuario']}</h4>
+                    <p>{mensaje['mensaje']}</p>
+                    <small>⏰ {mensaje['fecha']} | 📌 {mensaje['estado']}</small>
+                </div>
+                """, unsafe_allow_html=True)
+
+                col1, col2, col3 = st.columns([2,2,1])
+                with col1:
+                    st.text_input("💭 Responder", key=f"resp_{mensaje['usuario']}")
+                with col2:
+                    st.button("📤 Enviar", key=f"send_{mensaje['usuario']}")
+                with col3:
+                    st.button("⭐ Marcar como importante", key=f"star_{mensaje['usuario']}")
+
+    with tab2:
+        st.markdown("### 📊 Resumen de Actividad")
+
+        # Métricas
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Mensajes Nuevos", "15", "+3")
+        with col2:
+            st.metric("Tiempo Respuesta", "8 min", "-2 min")
+        with col3:
+            st.metric("Satisfacción", "95%", "+2%")
+
+        # Gráfico de actividad
+        fechas = pd.date_range(start='2025-03-01', end='2025-03-08')
+        datos = pd.DataFrame({
+            'fecha': fechas,
+            'mensajes': [12, 15, 10, 18, 20, 15, 17, 15]
         })
 
         fig = go.Figure()
         fig.add_trace(go.Scatter(
-            x=datos_ejemplo['fecha'],
-            y=datos_ejemplo['interacciones'],
+            x=datos['fecha'],
+            y=datos['mensajes'],
             mode='lines+markers',
-            name='Interacciones',
+            name='Mensajes',
             line=dict(color='#3BA8A8', width=3),
             marker=dict(size=8)
         ))
         fig.update_layout(
-            title='📈 Evolución de Interacciones',
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            xaxis_title='📅 Fecha',
-            yaxis_title='👍 Interacciones'
+            title='📈 Volumen de Mensajes',
+            xaxis_title='Fecha',
+            yaxis_title='Cantidad de Mensajes'
         )
         st.plotly_chart(fig, use_container_width=True)
-
-    with tab3:
-        st.markdown("""
-        <h3 style='color: #3BA8A8;'>⚙️ Ajustes de Cuenta</h3>
-        """, unsafe_allow_html=True)
-
-        # Formulario de configuración mejorado
-        with st.form("config_redes"):
-            st.subheader(f"🔧 Configuración de {red_social}")
-            usuario = st.text_input("👤 Usuario")
-            token = st.text_input("🔑 Token de API", type="password")
-            guardar = st.form_submit_button("💾 Guardar Configuración", use_container_width=True)
-
-        # Ajustes adicionales con estilo
-        st.markdown("""
-        <h4 style='color: #3BA8A8;'>🎛️ Preferencias de Publicación</h4>
-        """, unsafe_allow_html=True)
-
-        st.checkbox("🤖 Publicación automática")
-        st.checkbox("📧 Notificaciones por email")
-        st.select_slider(
-            "📊 Frecuencia máxima de publicación",
-            options=['1/día', '2/día', '3/día', '4/día', '5/día'],
-            value='3/día'
-        )
 
 if __name__ == "__main__":
     main()
