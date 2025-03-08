@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from utils.data_manager import load_data
+import time
 
 st.set_page_config(page_title="Inventario", page_icon="📦", layout="wide")
 
@@ -29,23 +30,35 @@ def main():
 
     hide_zero = st.checkbox("🚫 Ocultar productos agotados", value=False)
 
-    # Aplicar filtros
-    mask = pd.Series(True, index=df.index)
-
-    if hide_zero:
-        mask = mask & (df['cantidad'] > 0)
-
-    if search:
-        search_mask = (
-            df['producto'].str.contains(search, case=False, na=False) |
-            df['codigo'].str.contains(search, case=False, na=False) |
-            df['referencia'].str.contains(search, case=False, na=False)
-        )
-        mask = mask & search_mask
-
-    mask = mask & (df['precio'] >= precio_min) & (df['precio'] <= precio_max)
-
-    filtered_df = df[mask]
+    # Optimizar filtros
+    @st.cache_data(ttl=300)
+    def filter_dataframe(df, search, precio_min, precio_max, hide_zero):
+        # Usar método más eficiente para filtrar
+        filtered_df = df.copy()
+        
+        if hide_zero:
+            filtered_df = filtered_df[filtered_df['cantidad'] > 0]
+            
+        if search:
+            # Convertir a minúsculas para búsqueda más rápida
+            search = search.lower()
+            mask = (
+                filtered_df['producto'].str.lower().str.contains(search, na=False) |
+                filtered_df['codigo'].str.lower().str.contains(search, na=False) |
+                filtered_df['referencia'].str.lower().str.contains(search, na=False)
+            )
+            filtered_df = filtered_df[mask]
+            
+        # Aplicar filtros de precio
+        filtered_df = filtered_df[
+            (filtered_df['precio'] >= precio_min) & 
+            (filtered_df['precio'] <= precio_max)
+        ]
+        
+        return filtered_df
+    
+    # Aplicar filtros con caché
+    filtered_df = filter_dataframe(df, search, precio_min, precio_max, hide_zero)
 
     # Mostrar métricas
     col1, col2, col3, col4 = st.columns(4)
@@ -61,15 +74,29 @@ def main():
         st.metric("💰 Precio Promedio", f"${filtered_df['precio'].mean():,.2f}")
 
     # Mostrar tabla de inventario
-    def highlight_agotados(row):
-        if row['cantidad'] <= 0:
-            return ['background-color: #ffebee; color: #c62828'] * len(row)
-        elif row['cantidad'] < 5:
-            return ['background-color: #fff3e0; color: #ef6c00'] * len(row)
-        return [''] * len(row)
-
+    # Usar una función más eficiente para el estilo
+    @st.cache_data(ttl=300)
+    def get_styled_df(df):
+        def highlight_agotados(row):
+            if row['cantidad'] <= 0:
+                return ['background-color: #ffebee; color: #c62828'] * len(row)
+            elif row['cantidad'] < 5:
+                return ['background-color: #fff3e0; color: #ef6c00'] * len(row)
+            return [''] * len(row)
+        
+        # Limitar a las columnas principales para mejorar rendimiento
+        display_df = df[['producto', 'referencia', 'codigo', 'cantidad', 'precio']]
+        return display_df.style.apply(highlight_agotados, axis=1)
+    
+    # Mostrar solo las primeras 1000 filas con paginación para mejor rendimiento
+    if len(filtered_df) > 1000:
+        st.warning(f"Mostrando las primeras 1000 filas de {len(filtered_df)} productos filtrados.")
+        display_df = filtered_df.head(1000)
+    else:
+        display_df = filtered_df
+    
     st.dataframe(
-        filtered_df.style.apply(highlight_agotados, axis=1),
+        get_styled_df(display_df),
         use_container_width=True,
         hide_index=True,
         column_config={
