@@ -5,10 +5,6 @@ from utils.data_manager import load_data
 
 st.set_page_config(page_title="Calculadora de Descuentos", page_icon="🧮", layout="wide")
 
-def calcular_precio_mayorista(precio_publico):
-    """Calcula el precio mayorista (aproximadamente)"""
-    return precio_publico * 0.85
-
 def calcular_categorizacion(precio):
     """Categoriza el producto según su precio"""
     if precio < 50000:
@@ -172,6 +168,75 @@ def main():
 
         df = pd.DataFrame(data)
         st.bar_chart(df.set_index('Componente'))
+        
+        # Lista de descuentos favorables por producto del inventario
+        st.markdown("### 📋 Descuentos Recomendados por Producto")
+        
+        try:
+            inv_df = load_data()
+            if inv_df is not None and not inv_df.empty:
+                # Calcular los rangos de descuento para cada producto
+                descuentos_df = pd.DataFrame()
+                descuentos_df['producto'] = inv_df['producto']
+                descuentos_df['referencia'] = inv_df['referencia']
+                descuentos_df['codigo'] = inv_df['codigo']
+                descuentos_df['precio'] = inv_df['precio']
+                
+                # Calcular categoría y rangos
+                descuentos_df['categoria'] = descuentos_df['precio'].apply(
+                    lambda x: calcular_categorizacion(x)[0]
+                )
+                descuentos_df['min_descuento'] = descuentos_df['precio'].apply(
+                    lambda x: calcular_categorizacion(x)[1][0]
+                )
+                descuentos_df['max_descuento'] = descuentos_df['precio'].apply(
+                    lambda x: calcular_categorizacion(x)[1][1]
+                )
+                
+                # Mostrar tabla de descuentos
+                st.dataframe(
+                    descuentos_df[['producto', 'referencia', 'codigo', 'precio', 'min_descuento', 'max_descuento']],
+                    column_config={
+                        'producto': 'Producto',
+                        'referencia': 'Referencia',
+                        'codigo': 'Código',
+                        'precio': st.column_config.NumberColumn('Precio ($)', format="$%d"),
+                        'min_descuento': st.column_config.NumberColumn('Descuento Mínimo (%)', format="%d%%"),
+                        'max_descuento': st.column_config.NumberColumn('Descuento Máximo (%)', format="%d%%")
+                    },
+                    use_container_width=True,
+                    hide_index=True
+                )
+                
+                # Agregar filtro de búsqueda para esta tabla
+                search_product = st.text_input("🔍 Buscar producto para ver descuentos recomendados")
+                if search_product:
+                    filtered_discounts = descuentos_df[
+                        descuentos_df['producto'].str.contains(search_product, case=False, na=False) |
+                        descuentos_df['codigo'].str.contains(search_product, case=False, na=False) |
+                        descuentos_df['referencia'].str.contains(search_product, case=False, na=False)
+                    ]
+                    
+                    if not filtered_discounts.empty:
+                        st.dataframe(
+                            filtered_discounts[['producto', 'referencia', 'codigo', 'precio', 'min_descuento', 'max_descuento']],
+                            column_config={
+                                'producto': 'Producto',
+                                'referencia': 'Referencia',
+                                'codigo': 'Código',
+                                'precio': st.column_config.NumberColumn('Precio ($)', format="$%d"),
+                                'min_descuento': st.column_config.NumberColumn('Descuento Mínimo (%)', format="%d%%"),
+                                'max_descuento': st.column_config.NumberColumn('Descuento Máximo (%)', format="%d%%")
+                            },
+                            use_container_width=True,
+                            hide_index=True
+                        )
+                    else:
+                        st.info("No se encontraron productos que coincidan con la búsqueda.")
+            else:
+                st.info("No hay datos de inventario disponibles para mostrar descuentos recomendados.")
+        except Exception as e:
+            st.error(f"Error al calcular descuentos recomendados: {str(e)}")
 
         # Recomendaciones basadas en el inventario
         st.markdown("### 📊 Productos Similares en Inventario")
