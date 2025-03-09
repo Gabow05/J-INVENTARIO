@@ -21,14 +21,12 @@ st.set_page_config(
 logo_path = "assets/logo.png"
 if os.path.exists(logo_path):
     try:
-        with open(logo_path, "rb") as f:
-            logo_bytes = f.read()
-        st.sidebar.image(logo_bytes, width=200, caption="Variedades Juancho View")
+        st.sidebar.image(logo_path, width=200, caption="Variedades Juancho View")
     except Exception as e:
-        st.sidebar.markdown("<h1 style='text-align: center; color: #00CED1;'>Variedades Juancho</h1>", unsafe_allow_html=True)
+        st.sidebar.markdown("<h1 style='text-align: center; color: #00CED1;'>Variedades Juancho View</h1>", unsafe_allow_html=True)
         print(f"Error loading logo: {e}")
 else:
-    st.sidebar.markdown("<h1 style='text-align: center; color: #00CED1;'>Variedades Juancho</h1>", unsafe_allow_html=True)
+    st.sidebar.markdown("<h1 style='text-align: center; color: #00CED1;'>Variedades Juancho View</h1>", unsafe_allow_html=True)
 
 def main():
     st.title("🏪 Sistema de Inventario y POS")
